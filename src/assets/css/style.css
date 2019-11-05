@@ -1,0 +1,12 @@
+body {
+  background: #104b6b;
+}
+
+.score {
+  color: white;
+  position: fixed;
+  top: 100px;
+  left: 250px;
+  font-size: 4em;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
