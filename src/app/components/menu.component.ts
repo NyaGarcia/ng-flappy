@@ -1,18 +1,33 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
+import { MatDialogRef } from '@angular/material';
 
 @Component({
   selector: 'kb-menu',
   template: `
-    <h1 mat-dialog-title>Hi</h1>
+    <h1 mat-dialog-title>Kiwi Bird</h1>
     <div mat-dialog-content>
-      <p>What's your favorite animal?</p>
+      <p>Press any key to start the game</p>
     </div>
-    <!--<div mat-dialog-actions>
-      <button mat-button (click)="onNoClick()">No Thanks</button>
-      <button mat-button [mat-dialog-close]="data.animal" cdkFocusInitial>
-        Ok
+    <div mat-dialog-actions>
+      <button mat-button color="primary" cdkFocusInitial (click)="startGame()">
+        Start game!
       </button>
-    </div>-->
-  `
+    </div>
+  `,
 })
-export class MenuComponent {}
+export class MenuDialogComponent {
+  started = false;
+
+  constructor(public dialogRef: MatDialogRef<MenuDialogComponent>) {}
+
+  @HostListener('document:keydown')
+  startGame() {
+    if (!this.started) {
+      this.started = true;
+
+      return;
+    }
+
+    this.dialogRef.close();
+  }
+}

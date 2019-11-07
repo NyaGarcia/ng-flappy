@@ -1,50 +1,43 @@
 import * as PIXI from 'pixi.js';
 
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
-import { Application, Container, SCALE_MODES, Sprite, settings } from 'pixi.js';
-import { CANVAS_SIZE, PHYSICS, SPRITE_URLS } from '../game_config.constants';
-import {
-  Observable,
-  Subject,
-  Subscriber,
-  fromEvent,
-  interval,
-  timer
-} from 'rxjs';
-import { bufferTime, filter, first, takeUntil, tap } from 'rxjs/operators';
+import { Application, SCALE_MODES, Sprite, settings } from 'pixi.js';
+import { CANVAS_SIZE, SPRITE_URLS } from '../game_config.constants';
+import { Observable, Subscriber } from 'rxjs';
+import { bufferTime, filter, first, tap } from 'rxjs/operators';
 
 import { Pipe } from '../models/pipe.model';
 import { PipeService } from '../services/pipe.service';
-import { Player } from '../models/player.model';
 import { PlayerService } from '../services/player.service';
 import { Skyline } from '../models/skyline.model';
 import { SkylineService } from '../services/skyline.service';
+import { GameService } from '../services/game.service';
+import { MatSnackBar } from '@angular/material';
+import { EasterEggComponent } from './easter-egg.component';
 
 @Component({
   selector: 'kb-game',
   template: `
     <div #game></div>
-  `
+  `,
 })
 export class GameComponent implements AfterViewInit {
   private app: Application;
   private bump: any;
-  private skylineContainer: Container;
 
   @ViewChild('game', { static: true })
   gameContainer: ElementRef<HTMLDivElement>;
 
-  private pressedKey$: Observable<KeyboardEvent>;
-  private frameUpdate$: Observable<number>;
-  private backgroundUpdate$: Observable<number>;
-  private destroy$ = new Subject<void>();
-
-  private playerService: PlayerService;
-  private skylineService: SkylineService;
-  private pipeService: PipeService;
-
-  constructor(/* private scoreService: ScoreService */) {
+  constructor(
+    private gameService: GameService,
+    private playerService: PlayerService,
+    private skylineService: SkylineService,
+    private pipeService: PipeService,
+    private snackBar: MatSnackBar,
+  ) {
     this.bump = new Bump(PIXI);
+
+    this.gameService.start$.pipe(first()).subscribe(() => this.restart());
   }
 
   ngAfterViewInit(): void {
@@ -53,7 +46,7 @@ export class GameComponent implements AfterViewInit {
 
   public startGame(): void {
     this.setupPixi();
-    this.init();
+    this.partialInit();
   }
 
   private setupPixi(): void {
@@ -64,27 +57,38 @@ export class GameComponent implements AfterViewInit {
       height: CANVAS_SIZE.HEIGHT,
       antialias: true,
       transparent: false,
-      backgroundColor: 0x1099bb
+      backgroundColor: 0x1099bb,
     });
 
     this.gameContainer.nativeElement.appendChild(this.app.view);
 
-    this.skylineContainer = new Container();
-    this.app.stage.addChild(this.skylineContainer);
+    this.app.stage.addChild(this.skylineService.skylines);
   }
 
-  private init(): void {
+  private restart() {
+    this.destroy();
+
+    this.skylineService.init();
+
+    this.setupPixi();
+
+    this.partialInit();
+    this.addCollisions();
+    this.playerService.init();
+    this.gameService.startGame();
+  }
+
+  private partialInit(): void {
     this.setObservables();
-    this.setServices();
     this.setBackground();
     this.setSkyline();
-    this.setPlayer();
+    this.setServices();
     this.setObstacles();
-    this.app.stage.setChildIndex(this.skylineContainer, 1);
+    this.app.stage.setChildIndex(this.skylineService.skylines, 1);
   }
 
   private setObservables(): void {
-    this.frameUpdate$ = new Observable((observer: Subscriber<number>) => {
+    const frameUpdate$ = new Observable((observer: Subscriber<number>) => {
       const listener = (delta: number) => observer.next(delta);
 
       this.app.ticker.add(listener);
@@ -93,38 +97,33 @@ export class GameComponent implements AfterViewInit {
       return () => {
         this.app.ticker.remove(listener);
       };
-    }).pipe(takeUntil(this.destroy$));
+    });
 
-    this.frameUpdate$.subscribe(() => this.checkCollisions());
-
-    this.pressedKey$ = fromEvent<KeyboardEvent>(document, 'keydown');
-    this.backgroundUpdate$ = interval(1000);
+    this.gameService.setFrameUpdate(frameUpdate$);
 
     // "Easter egg"
-    this.pressedKey$
+    this.gameService.pressedKey$
       .pipe(
         bufferTime(1000),
         filter(({ length }) => length > 6),
         tap(() => {
-          //   this.gui.messages.innerHTML += 'WOW, SO MUCH POWER<br>';
+          this.snackBar.openFromComponent(EasterEggComponent, {
+            duration: 1000,
+            panelClass: ['white-snackbar'],
+          });
         }),
-        takeUntil(this.destroy$)
       )
       .subscribe();
   }
 
-  private setServices(): void {
-    this.playerService = this.playerService = new PlayerService(
-      this.app.stage,
-      this.frameUpdate$,
-      this.pressedKey$.pipe(takeUntil(this.destroy$))
-    );
-    this.skylineService = new SkylineService(
-      this.frameUpdate$,
-      this.skylineContainer
-    );
+  private addCollisions() {
+    this.gameService.getFrameUpdate().subscribe(() => this.checkCollisions());
+  }
 
-    this.pipeService = new PipeService(this.frameUpdate$, this.app.stage);
+  private setServices(): void {
+    const { stage } = this.app;
+    this.pipeService.setContainer(stage);
+    this.playerService.configure(stage);
   }
 
   private setBackground(): void {
@@ -137,17 +136,9 @@ export class GameComponent implements AfterViewInit {
     this.app.stage.addChild(bg);
   }
 
-  private setPlayer(): void {
-    this.playerService.setPlayer(this.createPlayer());
-  }
-
-  private createPlayer(): Player {
-    return new Player(this.app.stage);
-  }
-
   private setSkyline(): void {
     this.createInitialSkyline();
-    this.backgroundUpdate$.subscribe(() => this.createSkyline());
+    this.gameService.backgroundUpdate$.subscribe(() => this.createSkyline());
   }
 
   private createInitialSkyline(): void {
@@ -167,33 +158,25 @@ export class GameComponent implements AfterViewInit {
   private createSkylinePiece(positionX: number): void {
     const skyline = new Skyline({
       x: positionX,
-      y: CANVAS_SIZE.HEIGHT
+      y: CANVAS_SIZE.HEIGHT,
     });
 
     this.skylineService.addSkyline(skyline);
   }
 
   private setObstacles(): void {
-    timer(PHYSICS.PIPE_GENERATION_FIRST_WAIT, PHYSICS.PIPE_GENERATION_INTERVAL)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.createPipeSet();
-        this.pipeService.deleteOldPipes();
-        this.updateScore();
-      });
+    this.gameService.whenCreateObstacles().subscribe(() => {
+      this.createPipeSet();
+      this.pipeService.deleteOldPipes();
+    });
   }
 
   private createPipeSet(): void {
-    const bottomPipe = new Pipe(this.frameUpdate$);
+    const bottomPipe = new Pipe();
     this.pipeService.addPipe(bottomPipe);
 
-    const topPipe = new Pipe(this.frameUpdate$, bottomPipe.getSprite());
+    const topPipe = new Pipe(bottomPipe.getSprite());
     this.pipeService.addPipe(topPipe);
-  }
-
-  private updateScore(): void {
-    // this.scoreService.add();
-    // this.gui.scoreboard.innerHTML = `${this.scoreService.score}`;
   }
 
   private checkCollisions(): void {
@@ -210,11 +193,11 @@ export class GameComponent implements AfterViewInit {
 
   private gameOver(): void {
     this.playerService.killKiwi();
+    this.gameService.resetGame();
 
-    this.unsubscribe();
     this.showGameoverInfo();
 
-    this.pressedKey$.pipe(first()).subscribe(() => this.resetGame());
+    this.gameService.pressedKey$.pipe(first()).subscribe(() => this.restart());
   }
 
   private showGameoverInfo(): void {
@@ -227,20 +210,14 @@ export class GameComponent implements AfterViewInit {
     this.app.stage.addChild(gameOverSprite);
   }
 
-  private unsubscribe(): void {
-    this.destroy$.next();
-  }
-
-  private resetGame(): void {
-    // this.scoreService.reset();
+  private destroy(): void {
+    this.gameService.resetGame();
 
     // NOTE: Destroy all
     this.app.destroy(true, {
       texture: true,
       children: true,
-      baseTexture: true
+      baseTexture: true,
     });
-
-    this.startGame();
   }
 }

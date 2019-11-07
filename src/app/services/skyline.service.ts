@@ -1,18 +1,19 @@
 import { Container, DisplayObject } from 'pixi.js';
 
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { Skyline } from '../models/skyline.model';
+import { GameService } from './game.service';
 
 @Injectable()
 export class SkylineService {
-  constructor(
-    private frameUpdate$: Observable<number>,
-    private skylines: Container
-  ) {}
+  skylines: Container;
 
-  public getSkylines(): Container {
-    return this.skylines;
+  constructor(private gameService: GameService) {
+    this.init();
+  }
+
+  init() {
+    this.skylines = new Container();
   }
 
   public getLastSkylineObject(): DisplayObject {
@@ -30,6 +31,6 @@ export class SkylineService {
   }
 
   private subscribe(skyline: Skyline): void {
-    this.frameUpdate$.subscribe(delta => skyline.updatePosition(delta));
+    this.gameService.getFrameUpdate().subscribe(delta => skyline.updatePosition(delta));
   }
 }

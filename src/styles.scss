@@ -1,0 +1,29 @@
+/* You can add global styles to this file, and also import other style files */
+@import '@angular/material/prebuilt-themes/deeppurple-amber.css';
+
+@font-face {
+  font-family: 'Flappy';
+  src: url('assets/FlappyBirdy.ttf') format('truetype');
+}
+
+* {
+  font-family: Flappy;
+  font-size: 50px;
+}
+
+@import '~@angular/material/theming';
+
+// Define a custom typography config that overrides the font-family as well as the
+// `headlines` and `body-1` levels.
+$custom-typography: mat-typography-config(
+  $font-family: 'Flappy',
+  $subheading-1: mat-typography-level(50px, 24px, 400),
+  $headline: mat-typography-level(50px, 32px, 400),
+  $title: mat-typography-level(50px, 32px, 500),
+);
+
+@include angular-material-typography($custom-typography);
+
+.white-snackbar {
+  background: white;
+}

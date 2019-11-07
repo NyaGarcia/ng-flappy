@@ -7,12 +7,10 @@ import {
   SPRITE_URLS
 } from '../game_config.constants';
 
-import { Observable } from 'rxjs';
-
 export class Pipe {
   public sprite: PIXI.Sprite;
 
-  constructor(private frameUpdate$: Observable<number>, parent?: PIXI.Sprite) {
+  constructor(parent?: PIXI.Sprite) {
     this.createGameObject(parent);
   }
 

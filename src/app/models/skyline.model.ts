@@ -8,7 +8,6 @@ interface Position {
 }
 
 export class Skyline {
-  public subscribed: boolean = false;
   private sprite: PIXI.Sprite;
 
   constructor(position: Position) {
@@ -21,10 +20,6 @@ export class Skyline {
 
   public updatePosition(delta: number) {
     this.sprite.position.x -= PHYSICS.SKYLINE_SPEED * delta;
-  }
-
-  public setSubcribed() {
-    this.subscribed = true;
   }
 
   private createGameObject({ x, y }: Position) {

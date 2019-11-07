@@ -1,26 +1,27 @@
 import { Container, Sprite } from 'pixi.js';
-import { delay, filter, tap } from 'rxjs/operators';
+import { delay, filter, tap, takeUntil } from 'rxjs/operators';
 
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { Player } from '../models/player.model';
 import { SPRITE_URLS } from '../game_config.constants';
+import { GameService } from './game.service';
 
 @Injectable()
 export class PlayerService {
   private player: Player;
+  private stage: Container;
 
-  constructor(
-    private stage: Container,
-    private frameUpdate$: Observable<number>,
-    private pressedKey$: Observable<KeyboardEvent>
-  ) {
+  constructor(private gameService: GameService) {}
+
+  public init() {
+    this.player.create();
+    this.stage.addChild(this.player.getSprite());
     this.subscribe();
   }
 
-  public setPlayer(player: Player) {
-    this.stage.addChild(player.getSprite());
-    this.player = player;
+  configure(stage: Container) {
+    this.stage = stage;
+    this.player = new Player(stage);
   }
 
   public getSprite(): Sprite {
@@ -32,16 +33,15 @@ export class PlayerService {
   }
 
   private subscribe() {
-    this.frameUpdate$.subscribe(delta => {
-      this.player.calculateGravity(delta);
-    });
+    this.gameService.getFrameUpdate().subscribe(delta => this.player.calculateGravity(delta));
 
-    this.pressedKey$
+    this.gameService.pressedKey$
       .pipe(
         filter(({ keyCode }) => keyCode === 32 || keyCode === 38),
         tap(() => this.player.flap()),
         delay(150),
-        tap(() => this.player.changeAnimation(SPRITE_URLS.PLAYER.INITIAL))
+        tap(() => this.player.changeAnimation(SPRITE_URLS.PLAYER.INITIAL)),
+        takeUntil(this.gameService.destroy$),
       )
       .subscribe();
   }

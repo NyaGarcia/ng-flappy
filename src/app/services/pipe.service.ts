@@ -1,14 +1,17 @@
 import { Container } from 'pixi.js';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { Pipe } from '../models/pipe.model';
+import { GameService } from './game.service';
 
 @Injectable()
 export class PipeService {
-  constructor(
-    private frameUpdate$: Observable<number>,
-    private stage: Container
-  ) {}
+  private stage: Container;
+
+  constructor(private gameSevice: GameService) {}
+
+  public setContainer(stage: Container) {
+    this.stage = stage;
+  }
 
   public addPipe(pipe: Pipe): void {
     this.stage.addChild(pipe.getSprite());
@@ -24,6 +27,6 @@ export class PipeService {
   }
 
   private subscribe(pipe: Pipe): void {
-    this.frameUpdate$.subscribe(delta => pipe.updatePosition(delta));
+    this.gameSevice.getFrameUpdate().subscribe(delta => pipe.updatePosition(delta));
   }
 }
