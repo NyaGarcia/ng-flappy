@@ -6,16 +6,18 @@ export class Player {
   private ySpeed: number;
   private sprite: any;
 
-  constructor(public stage: PIXI.Container) {}
+  constructor() {
+    this.createGameObject();
+  }
 
-  public create(): void {
+  public createGameObject(): void {
     this.sprite = PIXI.Sprite.from(SPRITE_URLS.PLAYER.INITIAL);
     this.ySpeed = 0;
     this.sprite.anchor.set(0.5);
     this.sprite.position.set(250, CANVAS_SIZE.HEIGHT / 2);
     this.sprite.scale.set(5);
 
-    this.stage.addChild(this.sprite);
+    //this.stage.addChild(this.sprite);
   }
 
   public getSprite(): PIXI.Sprite {

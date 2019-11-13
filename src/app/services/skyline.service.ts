@@ -1,8 +1,8 @@
 import { Container, DisplayObject } from 'pixi.js';
 
+import { GameService } from './game.service';
 import { Injectable } from '@angular/core';
 import { Skyline } from '../models/skyline.model';
-import { GameService } from './game.service';
 
 @Injectable()
 export class SkylineService {

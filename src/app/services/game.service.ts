@@ -1,17 +1,30 @@
+import { Subject, fromEvent, interval, timer } from 'rxjs';
+import { bufferTime, filter, share, takeUntil } from 'rxjs/operators';
+
 import { Injectable } from '@angular/core';
-import { Observable, fromEvent, interval, BehaviorSubject, Subject, timer, merge } from 'rxjs';
-import { filter, switchAll, takeUntil, share } from 'rxjs/operators';
 import { PHYSICS } from '../game_config.constants';
 
 @Injectable()
 export class GameService {
   pressedKey$ = fromEvent<KeyboardEvent>(document, 'keydown');
-  frameUpdate$ = new BehaviorSubject<Observable<number>>(null);
+
+  frameUpdate$ = new Subject<number>();
   backgroundUpdate$ = interval(1000);
 
   start$ = new Subject<void>();
 
-  destroy$ = new Subject<void>();
+  private destroy$ = new Subject<void>();
+
+  easterEgg$ = this.pressedKey$.pipe(
+    bufferTime(1000),
+    filter(({ length }) => length > 6),
+    takeUntil(this.destroy$),
+  );
+
+  flap$ = this.pressedKey$.pipe(
+    filter(({ keyCode }) => keyCode === 32 || keyCode === 38),
+    takeUntil(this.destroy$),
+  );
 
   private pipeGeneration$ = timer(
     PHYSICS.PIPE_GENERATION_FIRST_WAIT,
@@ -26,16 +39,8 @@ export class GameService {
     this.destroy$.next();
   }
 
-  setFrameUpdate(frameUpdate$: Observable<number>) {
-    this.frameUpdate$.next(frameUpdate$);
-  }
-
   getFrameUpdate() {
-    return this.frameUpdate$.pipe(
-      filter(frameUpdate$ => !!frameUpdate$),
-      switchAll(),
-      takeUntil(this.destroy$),
-    );
+    return this.frameUpdate$.pipe(takeUntil(this.destroy$));
   }
 
   whenCreateObstacles() {
