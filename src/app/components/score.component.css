@@ -1,0 +1,19 @@
+.score-container {
+  width: 250px;
+  height: 0px;
+  border-right: 60px solid transparent;
+  border-left: 60px solid transparent;
+  border-top: 70px solid #212121;
+  position: relative;
+  margin-left: 450px;
+  margin-top: 10px;
+}
+
+.score {
+  position: absolute;
+  top: -70px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #e3e3e3;
+}

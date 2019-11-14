@@ -6,9 +6,22 @@
   src: url('assets/FlappyBirdy.ttf') format('truetype');
 }
 
+@font-face {
+  font-family: 'Pixelfont';
+  src: url('assets/back-to-1982.regular.ttf') format('truetype');
+}
+
 * {
   font-family: Flappy;
   font-size: 50px;
+}
+
+html{
+  overflow: hidden; 
+}
+
+.pixelfont {
+  font-family: Pixelfont;
 }
 
 @import '~@angular/material/theming';

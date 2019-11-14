@@ -1,0 +1,14 @@
+.background-page {
+  background-color: #323232;
+}
+
+.navbar {
+  height: 50px;
+  color: #14ffec;
+  background-color: #212121;
+}
+
+.header-title {
+  color: #14ffec;
+  padding: 0.6 em 0.75em;
+}

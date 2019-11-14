@@ -14,7 +14,7 @@ import { MenusService } from '../services/menus.service';
 @Component({
   selector: 'kb-game',
   template: `
-    <div #game></div>
+    <div #game style="border-radius: 10px;"></div>
   `,
 })
 export class GameComponent implements OnInit {

@@ -1,13 +1,15 @@
 import { Component } from '@angular/core';
-
 import { GameService } from '../services/game.service';
 
 @Component({
   selector: 'kb-score',
+  styleUrls: ['./score.component.css'],
   template: `
-    <span class="is-size-2" style="font-family: Roboto">
-      {{ score$ | async }}
-    </span>
+    <div class="score-container">
+      <span class="is-size-2 pixelfont score">
+        {{ score$ | async }}
+      </span>
+    </div>
   `,
 })
 export class ScoreComponent {
