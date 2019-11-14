@@ -1,26 +1,20 @@
-import * as PIXI from 'pixi.js';
+import { Sprite, Texture } from 'pixi.js';
 
-import { CANVAS_SIZE, PHYSICS, SPRITE_URLS } from '../game_config.constants';
+import { CANVAS_SIZE, PHYSICS, SPRITE_URLS } from '../game-config.constants';
 
 export class Player {
+  private sprite: Sprite;
   private ySpeed: number;
-  private sprite: any;
 
   constructor() {
-    this.createGameObject();
-  }
-
-  public createGameObject(): void {
-    this.sprite = PIXI.Sprite.from(SPRITE_URLS.PLAYER.INITIAL);
+    this.sprite = Sprite.from(SPRITE_URLS.PLAYER.INITIAL);
     this.ySpeed = 0;
     this.sprite.anchor.set(0.5);
     this.sprite.position.set(250, CANVAS_SIZE.HEIGHT / 2);
     this.sprite.scale.set(5);
-
-    //this.stage.addChild(this.sprite);
   }
 
-  public getSprite(): PIXI.Sprite {
+  public getSprite(): Sprite {
     return this.sprite;
   }
 
@@ -39,7 +33,7 @@ export class Player {
   }
 
   public changeAnimation(url: string): void {
-    const texture = PIXI.Texture.from(url);
+    const texture = Texture.from(url);
     this.sprite.texture = texture;
   }
 }

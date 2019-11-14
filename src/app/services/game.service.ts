@@ -1,49 +1,48 @@
-import { Subject, fromEvent, interval, timer } from 'rxjs';
-import { bufferTime, filter, share, takeUntil } from 'rxjs/operators';
-
 import { Injectable } from '@angular/core';
-import { PHYSICS } from '../game_config.constants';
+import { Subject, fromEvent, interval, timer } from 'rxjs';
+import { bufferTime, filter, share, takeUntil, switchMap, scan } from 'rxjs/operators';
+
+import { PHYSICS } from '../game-config.constants';
 
 @Injectable()
 export class GameService {
-  pressedKey$ = fromEvent<KeyboardEvent>(document, 'keydown');
+  private stopGame$ = new Subject<void>();
+  private pressedKey$ = fromEvent<KeyboardEvent>(document, 'keydown').pipe(share());
 
-  frameUpdate$ = new Subject<number>();
-  backgroundUpdate$ = interval(1000);
+  onFrameUpdate$ = new Subject<number>().pipe(takeUntil(this.stopGame$)) as Subject<number>;
 
-  start$ = new Subject<void>();
+  onStart$ = new Subject<void>();
 
-  private destroy$ = new Subject<void>();
+  score$ = this.onStart$.pipe(
+    switchMap(() => this.whenToCreateObstacles$.pipe(scan(score => score + 1, 0))),
+  );
 
   easterEgg$ = this.pressedKey$.pipe(
     bufferTime(1000),
     filter(({ length }) => length > 6),
-    takeUntil(this.destroy$),
+    takeUntil(this.stopGame$),
   );
 
-  flap$ = this.pressedKey$.pipe(
+  onFlap$ = this.pressedKey$.pipe(
     filter(({ keyCode }) => keyCode === 32 || keyCode === 38),
-    takeUntil(this.destroy$),
+    takeUntil(this.stopGame$),
   );
 
-  private pipeGeneration$ = timer(
+  whenToCreateObstacles$ = timer(
     PHYSICS.PIPE_GENERATION_FIRST_WAIT,
     PHYSICS.PIPE_GENERATION_INTERVAL,
-  ).pipe(share());
+  ).pipe(
+    share(),
+    takeUntil(this.stopGame$),
+  );
+
+  whenToCreateSkyline$ = interval(1000).pipe(takeUntil(this.stopGame$));
 
   startGame() {
-    this.start$.next();
+    this.onStart$.next();
   }
 
-  resetGame() {
-    this.destroy$.next();
-  }
-
-  getFrameUpdate() {
-    return this.frameUpdate$.pipe(takeUntil(this.destroy$));
-  }
-
-  whenCreateObstacles() {
-    return this.pipeGeneration$.pipe(takeUntil(this.destroy$));
+  stopGame() {
+    this.stopGame$.next();
   }
 }

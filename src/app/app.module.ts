@@ -1,3 +1,4 @@
+import { NgModule } from '@angular/core';
 import {
   MatDialogModule,
   MatButtonModule,
@@ -9,14 +10,12 @@ import {
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { GameComponent } from './components/game.component';
-import { NgModule } from '@angular/core';
-import { PipeService } from './services/pipe.service';
-import { PlayerService } from './services/player.service';
-import { SkylineService } from './services/skyline.service';
 import { GameService } from './services/game.service';
-import { MenuDialogComponent } from './components/menu.component';
 import { ScoreComponent } from './components/score.component';
 import { EasterEggComponent } from './components/easter-egg.component';
+import { GameOverMenuComponent } from './components/menus/game-over.menu.component';
+import { WelcomeMenuComponent } from './components/menus/welcome.menu.component';
+import { MenusService } from './services/menus.service';
 
 const MATERIAL_MODULES = [
   MatDialogModule,
@@ -26,17 +25,13 @@ const MATERIAL_MODULES = [
   MatSnackBarModule,
 ];
 
+const MENUS = [GameOverMenuComponent, WelcomeMenuComponent];
+
 @NgModule({
-  declarations: [
-    AppComponent,
-    GameComponent,
-    MenuDialogComponent,
-    ScoreComponent,
-    EasterEggComponent,
-  ],
-  entryComponents: [MenuDialogComponent, EasterEggComponent],
+  declarations: [AppComponent, GameComponent, ScoreComponent, EasterEggComponent, MENUS],
+  entryComponents: [MENUS, EasterEggComponent],
   imports: [BrowserAnimationsModule, MATERIAL_MODULES],
-  providers: [SkylineService, PipeService, PlayerService, GameService],
+  providers: [GameService, MenusService],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

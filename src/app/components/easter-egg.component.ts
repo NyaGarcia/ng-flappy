@@ -12,6 +12,4 @@ import { Component } from '@angular/core';
     `,
   ],
 })
-export class EasterEggComponent {
-  constructor() {}
-}
+export class EasterEggComponent {}

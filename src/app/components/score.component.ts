@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
+
 import { GameService } from '../services/game.service';
-import { scan, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'kb-score',
@@ -11,9 +11,7 @@ import { scan, switchMap } from 'rxjs/operators';
   `,
 })
 export class ScoreComponent {
-  score$ = this.gameService.start$.pipe(
-    switchMap(() => this.gameService.whenCreateObstacles().pipe(scan(score => score + 1, 0))),
-  );
+  score$ = this.gameService.score$;
 
   constructor(private gameService: GameService) {}
 }
