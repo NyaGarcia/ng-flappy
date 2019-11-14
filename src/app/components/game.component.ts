@@ -170,6 +170,9 @@ export class GameComponent implements OnInit {
     });
 
     this.skylineContainer.addChild(skyline.getSprite());
+    this.gameService.onFrameUpdate$.subscribe((delta) =>
+      skyline.updatePosition(delta)
+    );
   }
 
   private createPipeSet(): void {
