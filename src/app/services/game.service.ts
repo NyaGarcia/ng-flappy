@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
 import { Subject, fromEvent, interval, timer } from 'rxjs';
-import { bufferTime, filter, share, takeUntil, switchMap, scan } from 'rxjs/operators';
+import { bufferTime, filter, scan, share, switchMap, takeUntil } from 'rxjs/operators';
 
+import { Injectable } from '@angular/core';
 import { PHYSICS } from '../game-config.constants';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class GameService {
   onStart$ = new Subject<void>();
 
   score$ = this.onStart$.pipe(
-    switchMap(() => this.whenToCreateObstacles$.pipe(scan(score => score + 1, 0))),
+    switchMap(() => this.createObstacle$.pipe(scan(score => score + 1, 0))),
   );
 
   easterEgg$ = this.pressedKey$.pipe(
@@ -28,15 +28,12 @@ export class GameService {
     takeUntil(this.stopGame$),
   );
 
-  whenToCreateObstacles$ = timer(
+  createObstacle$ = timer(
     PHYSICS.PIPE_GENERATION_FIRST_WAIT,
     PHYSICS.PIPE_GENERATION_INTERVAL,
-  ).pipe(
-    share(),
-    takeUntil(this.stopGame$),
-  );
+  ).pipe(share(), takeUntil(this.stopGame$));
 
-  whenToCreateSkyline$ = interval(1000).pipe(takeUntil(this.stopGame$));
+  skylineUpdate$ = interval(1000).pipe(takeUntil(this.stopGame$));
 
   startGame() {
     this.onStart$.next();
