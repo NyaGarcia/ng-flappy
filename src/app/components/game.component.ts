@@ -1,20 +1,21 @@
-import { Component, ElementRef, ViewChild, OnInit } from '@angular/core';
-import { MatSnackBar } from '@angular/material';
 import * as PIXI from 'pixi.js';
-import { delay, first, tap } from 'rxjs/operators';
 
 import { CANVAS_SIZE, SPRITE_URLS } from '../game-config.constants';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { delay, first, tap } from 'rxjs/operators';
+
 import { EasterEggComponent } from './easter-egg.component';
 import { GameService } from '../services/game.service';
+import { MatSnackBar } from '@angular/material';
+import { MenusService } from '../services/menus.service';
 import { Pipe } from '../models/pipe.model';
 import { Player } from '../models/player.model';
 import { Skyline } from '../models/skyline.model';
-import { MenusService } from '../services/menus.service';
 
 @Component({
   selector: 'kb-game',
   template: `
-    <div #game style="border-radius: 10px;"></div>
+    <div #game></div>
   `,
 })
 export class GameComponent implements OnInit {
@@ -39,7 +40,7 @@ export class GameComponent implements OnInit {
 
     this.gameService.onStart$.pipe(first()).subscribe(() => {
       this.gameService.stopGame();
-      this.restart();
+      this.startGame();
     });
 
     this.menus.welcome().subscribe(() => this.gameService.startGame());
@@ -58,7 +59,8 @@ export class GameComponent implements OnInit {
       transparent: false,
       backgroundColor: 0x1099bb,
     });
-
+    this.app.view.style.boxShadow = '0px 0px 5px 5px rgba(0,0,0,0.75)';
+    this.app.view.style.borderRadius = '10px';
     this.gameContainer.nativeElement.appendChild(this.app.view);
 
     this.skylineContainer = new PIXI.Container();
@@ -73,7 +75,7 @@ export class GameComponent implements OnInit {
     this.setObstacles();
   }
 
-  private restart(): void {
+  private startGame(): void {
     this.destroy();
 
     this.setupPixi();
@@ -92,7 +94,7 @@ export class GameComponent implements OnInit {
   }
 
   private setObstacles(): void {
-    this.gameService.whenToCreateObstacles$.subscribe(() => {
+    this.gameService.createObstacle$.subscribe(() => {
       this.createPipeSet();
       this.deleteOldPipes();
     });
@@ -101,6 +103,7 @@ export class GameComponent implements OnInit {
   private createPlayer(): void {
     this.player = new Player();
     this.app.stage.addChild(this.player.getSprite());
+
     this.gameService.onFrameUpdate$.subscribe(delta => this.player.calculateGravity(delta));
 
     this.gameService.onFlap$
@@ -146,7 +149,7 @@ export class GameComponent implements OnInit {
 
     this.app.stage.setChildIndex(this.skylineContainer, 1);
 
-    this.gameService.whenToCreateSkyline$.subscribe(() => this.createSkyline());
+    this.gameService.skylineUpdate$.subscribe(() => this.createSkyline());
   }
 
   private createSkyline(): void {
@@ -170,9 +173,7 @@ export class GameComponent implements OnInit {
     });
 
     this.skylineContainer.addChild(skyline.getSprite());
-    this.gameService.onFrameUpdate$.subscribe((delta) =>
-      skyline.updatePosition(delta)
-    );
+    this.gameService.onFrameUpdate$.subscribe(delta => skyline.updatePosition(delta));
   }
 
   private createPipeSet(): void {
@@ -210,18 +211,11 @@ export class GameComponent implements OnInit {
 
     this.gameService.stopGame();
 
-    this.showGameoverInfo();
-    this.menus.gameOver().subscribe(() => this.restart());
+    this.restartGame();
   }
 
-  private showGameoverInfo(): void {
-    const gameOverSprite = PIXI.Sprite.from(SPRITE_URLS.GAME_OVER_TEXT);
-
-    gameOverSprite.anchor.set(0.5);
-    gameOverSprite.position.set(CANVAS_SIZE.WIDTH / 2, CANVAS_SIZE.HEIGHT / 3);
-    gameOverSprite.scale.set(10);
-
-    this.app.stage.addChild(gameOverSprite);
+  private restartGame() {
+    this.menus.gameOver().subscribe(() => this.startGame());
   }
 
   private destroy() {
