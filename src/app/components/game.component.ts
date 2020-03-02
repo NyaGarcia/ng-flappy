@@ -6,7 +6,7 @@ import { delay, first, tap } from 'rxjs/operators';
 
 import { EasterEggComponent } from './easter-egg.component';
 import { GameService } from '../services/game.service';
-import { MatSnackBar } from '@angular/material';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MenusService } from '../services/menus.service';
 import { Pipe } from '../models/pipe.model';
 import { Player } from '../models/player.model';

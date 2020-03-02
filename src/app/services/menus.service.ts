@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MatDialog } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
 
 import { WelcomeMenuComponent } from '../components/menus/welcome.menu.component';
 import { GameOverMenuComponent } from '../components/menus/game-over.menu.component';

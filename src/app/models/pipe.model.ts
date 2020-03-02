@@ -1,6 +1,6 @@
-import { Sprite } from 'pixi.js';
-
 import { CANVAS_SIZE, PARAMS, PHYSICS, SPRITE_URLS } from '../game-config.constants';
+
+import { Sprite } from 'pixi.js';
 
 export class Pipe {
   private sprite: Sprite;

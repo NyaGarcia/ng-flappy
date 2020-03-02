@@ -1,8 +1,9 @@
-import { HostListener, Injectable } from '@angular/core';
+import { Directive, HostListener, Injectable } from '@angular/core';
 
-import { MatDialogRef } from '@angular/material';
+import { MatDialogRef } from '@angular/material/dialog';
 
-@Injectable()
+@Directive()
+//@Injectable()
 export class MenuComponent {
   constructor(public dialogRef: MatDialogRef<MenuComponent>) {}
 
