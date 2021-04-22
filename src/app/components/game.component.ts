@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
 
-import { CANVAS_SIZE, SPRITE_URLS } from '../game-config.constants';
+import { BOUNDS, CANVAS_SIZE, PARAMS, SPRITE_URLS } from '../game-config.constants';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { delay, first, tap } from 'rxjs/operators';
+import { delay, filter, first, map, tap } from 'rxjs/operators';
 
 import { EasterEggComponent } from './easter-egg.component';
 import { GameService } from '../services/game.service';
@@ -70,9 +70,9 @@ export class GameComponent implements OnInit {
   }
 
   private prepareGameWithBackgroundAndObstacles(): void {
-    this.setBackground();
-    this.setSkyline();
-    this.setObstacles();
+    this.renderBackground();
+    this.renderSkyline();
+    this.renderObstacles();
   }
 
   private startGame(): void {
@@ -91,35 +91,10 @@ export class GameComponent implements OnInit {
   private addCapabilitiesToPlayGame(): void {
     this.createPlayer();
     this.addCollisions();
+    this.addBoundsCheck();
   }
 
-  private setObstacles(): void {
-    this.gameService.createObstacle$.subscribe(() => {
-      this.createPipeSet();
-      this.deleteOldPipes();
-    });
-  }
-
-  private createPlayer(): void {
-    this.player = new Player();
-    this.app.stage.addChild(this.player.getSprite());
-
-    this.gameService.onFrameUpdate$.subscribe(delta => this.player.calculateGravity(delta));
-
-    this.gameService.onFlap$
-      .pipe(
-        tap(() => this.player.flap()),
-        delay(150),
-        tap(() => this.player.changeAnimation(SPRITE_URLS.PLAYER.INITIAL)),
-      )
-      .subscribe();
-  }
-
-  private addCollisions(): void {
-    this.gameService.onFrameUpdate$.subscribe(() => this.checkCollisions());
-  }
-
-  private setBackground(): void {
+  private renderBackground(): void {
     const bg = PIXI.Sprite.from(SPRITE_URLS.IMAGE_BACKGROUND);
 
     bg.anchor.set(0);
@@ -129,35 +104,45 @@ export class GameComponent implements OnInit {
     this.app.stage.addChild(bg);
   }
 
-  private setEasterEgg(): void {
-    this.gameService.easterEgg$
+  private createPlayer(): void {
+    this.player = new Player();
+    this.app.stage.addChild(this.player.sprite);
+
+    this.gameService.onFrameUpdate$
+      .pipe(tap(delta => this.player.calculateGravity(delta)))
+      .subscribe();
+
+    this.gameService.onFlap$
       .pipe(
-        tap(() => {
-          this.snackBar.openFromComponent(EasterEggComponent, {
-            duration: 1000,
-            panelClass: ['white-snackbar'],
-          });
-        }),
+        tap(() => this.player.flap()),
+        delay(PARAMS.FLAP_DELAY),
+        tap(() => this.player.changeAnimation(SPRITE_URLS.PLAYER.INITIAL)),
       )
       .subscribe();
   }
 
-  private setSkyline(): void {
-    for (let i = 0; i < 3; i++) {
-      this.createSkylinePiece(i * 500);
-    }
+  private renderSkyline(): void {
+    this.createInitialSkyline();
 
     this.app.stage.setChildIndex(this.skylineContainer, 1);
 
-    this.gameService.skylineUpdate$.subscribe(() => this.createSkyline());
+    this.gameService.skylineUpdate$
+      .pipe(
+        map(() => this.getLastSkyline()),
+        filter(this.isNewSkylineNeeded),
+        tap(lastSkyline => this.createSkylinePiece(lastSkyline.position.x + lastSkyline.width)),
+      )
+      .subscribe();
   }
 
-  private createSkyline(): void {
-    const lastSkyline = this.getLastSkyline();
-
-    if (lastSkyline.position.x <= CANVAS_SIZE.WIDTH) {
-      this.createSkylinePiece(lastSkyline.position.x + lastSkyline.width);
+  private createInitialSkyline() {
+    for (let i = 0; i < 3; i++) {
+      this.createSkylinePiece(i * 500);
     }
+  }
+
+  private isNewSkylineNeeded(lastSkyline: PIXI.DisplayObject) {
+    return lastSkyline.position.x <= CANVAS_SIZE.WIDTH;
   }
 
   private getLastSkyline(): PIXI.DisplayObject {
@@ -172,8 +157,17 @@ export class GameComponent implements OnInit {
       y: CANVAS_SIZE.HEIGHT,
     });
 
-    this.skylineContainer.addChild(skyline.getSprite());
-    this.gameService.onFrameUpdate$.subscribe(delta => skyline.updatePosition(delta));
+    this.skylineContainer.addChild(skyline.sprite);
+    this.gameService.onFrameUpdate$.pipe(tap(delta => skyline.updatePosition(delta))).subscribe();
+  }
+
+  private renderObstacles(): void {
+    this.gameService.createObstacle$
+      .pipe(
+        tap(() => this.createPipeSet()),
+        tap(() => this.deleteOldPipes()),
+      )
+      .subscribe();
   }
 
   private createPipeSet(): void {
@@ -181,8 +175,10 @@ export class GameComponent implements OnInit {
     const topPipe = new Pipe(bottomPipe);
 
     for (const pipe of [bottomPipe, topPipe]) {
-      this.app.stage.addChild(pipe.getSprite());
-      this.gameService.onFrameUpdate$.subscribe(delta => pipe.updatePosition(delta));
+      this.app.stage.addChild(pipe.sprite);
+      this.gameService.onFrameUpdate$
+        .pipe(tap((delta: number) => pipe.updatePosition(delta)))
+        .subscribe();
     }
   }
 
@@ -194,16 +190,39 @@ export class GameComponent implements OnInit {
       .forEach(pipe => this.app.stage.removeChild(pipe));
   }
 
-  private checkCollisions(): void {
+  private addCollisions(): void {
+    this.gameService.onFrameUpdate$
+      .pipe(
+        filter(() => this.checkCollisions()),
+        tap(() => this.gameOver()),
+      )
+      .subscribe();
+  }
+
+  private checkCollisions() {
     const { children } = this.app.stage;
 
-    if (
-      children
-        .filter(({ type }) => type === 'pipe')
-        .some(pipe => this.bump.hit(this.player.getSprite(), pipe))
-    ) {
-      this.gameOver();
-    }
+    return this.hasCollided(children);
+  }
+
+  private hasCollided(children: PIXI.DisplayObject[]) {
+    return children
+      .filter(({ type }) => type === 'pipe')
+      .some(pipe => this.bump.hit(this.player.sprite, pipe));
+  }
+
+  private addBoundsCheck() {
+    this.gameService.onFrameUpdate$
+      .pipe(
+        filter(() => this.isPlayerOutOfBounds()),
+        tap(() => this.gameOver()),
+      )
+      .subscribe();
+  }
+
+  private isPlayerOutOfBounds() {
+    const playerHeight = this.player.position.y;
+    return playerHeight > BOUNDS.BOTTOM || playerHeight < BOUNDS.TOP;
   }
 
   private gameOver(): void {
@@ -215,7 +234,10 @@ export class GameComponent implements OnInit {
   }
 
   private restartGame() {
-    this.menus.gameOver().subscribe(() => this.startGame());
+    this.menus
+      .gameOver()
+      .pipe(tap(() => this.startGame()))
+      .subscribe();
   }
 
   private destroy() {
@@ -224,5 +246,18 @@ export class GameComponent implements OnInit {
       children: true,
       baseTexture: true,
     });
+  }
+
+  private setEasterEgg(): void {
+    this.gameService.easterEgg$
+      .pipe(
+        tap(() => {
+          this.snackBar.openFromComponent(EasterEggComponent, {
+            duration: 1000,
+            panelClass: ['white-snackbar'],
+          });
+        }),
+      )
+      .subscribe();
   }
 }
