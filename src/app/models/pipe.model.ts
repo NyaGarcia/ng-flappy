@@ -3,10 +3,10 @@ import { CANVAS_SIZE, PARAMS, PHYSICS, SPRITE_URLS } from '../game-config.consta
 import { Sprite } from 'pixi.js';
 
 export class Pipe {
-  private sprite: Sprite;
+  private _sprite: Sprite;
 
   constructor(parent?: Pipe) {
-    this.sprite = Sprite.from(SPRITE_URLS.PIPE);
+    this._sprite = Sprite.from(SPRITE_URLS.PIPE);
 
     const anchor = {
       x: 0.5,
@@ -14,9 +14,9 @@ export class Pipe {
     };
 
     const pos = {
-      x: CANVAS_SIZE.WIDTH + this.sprite.width,
+      x: CANVAS_SIZE.WIDTH + this._sprite.width,
       y: parent
-        ? parent.getSprite().position.y - PARAMS.VERTICAL_PIPES_SEPARATION
+        ? parent.sprite.position.y - PARAMS.VERTICAL_PIPES_SEPARATION
         : this.getRandomHeight(),
     };
 
@@ -25,19 +25,19 @@ export class Pipe {
       y: parent ? -7 : 7,
     };
 
-    this.sprite.anchor.set(anchor.x, anchor.y);
-    this.sprite.position.set(pos.x, pos.y);
-    this.sprite.scale.set(scale.x, scale.y);
+    this._sprite.anchor.set(anchor.x, anchor.y);
+    this._sprite.position.set(pos.x, pos.y);
+    this._sprite.scale.set(scale.x, scale.y);
 
-    this.sprite.type = 'pipe';
+    this._sprite.type = 'pipe';
   }
 
-  public getSprite(): Sprite {
-    return this.sprite;
+  public get sprite(): Sprite {
+    return this._sprite;
   }
 
   public updatePosition(delta: number): void {
-    this.sprite.position.x -= PHYSICS.PIPE_SPEED * delta;
+    this._sprite.position.x -= PHYSICS.PIPE_SPEED * delta;
   }
 
   private getRandomHeight(): number {

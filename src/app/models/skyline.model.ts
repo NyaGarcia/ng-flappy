@@ -1,6 +1,6 @@
-import { Sprite } from 'pixi.js';
-
 import { PHYSICS, SPRITE_URLS } from '../game-config.constants';
+
+import { Sprite } from 'pixi.js';
 
 interface Position {
   x: number;
@@ -8,22 +8,22 @@ interface Position {
 }
 
 export class Skyline {
-  private sprite: Sprite;
+  private _sprite: Sprite;
 
   constructor({ x, y }: Position) {
-    this.sprite = Sprite.from(SPRITE_URLS.SKYLINE);
-    this.sprite.anchor.set(0, 1);
-    this.sprite.position.set(x, y);
-    this.sprite.scale.set(5);
+    this._sprite = Sprite.from(SPRITE_URLS.SKYLINE);
+    this._sprite.anchor.set(0, 1);
+    this._sprite.position.set(x, y);
+    this._sprite.scale.set(5);
 
-    this.sprite.type = 'skyline';
+    this._sprite.type = 'skyline';
   }
 
-  public getSprite() {
-    return this.sprite;
+  public get sprite() {
+    return this._sprite;
   }
 
   public updatePosition(delta: number) {
-    this.sprite.position.x -= PHYSICS.SKYLINE_SPEED * delta;
+    this._sprite.position.x -= PHYSICS.SKYLINE_SPEED * delta;
   }
 }
