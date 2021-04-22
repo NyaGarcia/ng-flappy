@@ -25,4 +25,10 @@ export const PHYSICS = {
 
 export const PARAMS = {
   VERTICAL_PIPES_SEPARATION: 1000,
+  FLAP_DELAY: 150,
 } as const;
+
+export const BOUNDS = {
+  TOP: -60,
+  BOTTOM: CANVAS_SIZE.HEIGHT + 30,
+};
