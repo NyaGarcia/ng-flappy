@@ -11,8 +11,7 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es5",
-    "typeRoots": ["node_modules/@types"],
+    "target": "es6",
     "lib": ["es2018", "dom"]
   }
 }
