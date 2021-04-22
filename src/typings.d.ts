@@ -1,13 +1,12 @@
-declare namespace PIXI {
-  interface CustomProperties {
-    width: any;
+interface CustomProperties {
+  width: number;
 
-    type: 'skyline' | 'pipe';
-  }
+  type: 'skyline' | 'pipe';
+}
 
-  interface DisplayObject extends CustomProperties {}
-
+declare namespace GlobalMixins {
   interface Sprite extends CustomProperties {}
+  interface DisplayObject extends CustomProperties {}
 }
 
 declare var Bump: any;
